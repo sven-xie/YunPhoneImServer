@@ -2,10 +2,16 @@ package com.sven.rtcim.server;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.ImmutableMap;
+import com.sven.rtcim.redis.LoginUser;
+import com.sven.rtcim.redis.RedisCache;
 import com.sven.rtcim.utils.DateUtil;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.websocketx.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Map;
 
@@ -16,6 +22,14 @@ import java.util.Map;
  */
 @Slf4j
 public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
+
+    private final static String secret = "xie1203";
+
+    private RedisCache redisCache;
+
+    public NettyChannelHandler(RedisCache redisCache) {
+        this.redisCache = redisCache;
+    }
 
     @Override
     public void handlerAdded(ChannelHandlerContext context) throws Exception {
@@ -83,9 +97,34 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
             switch (type) {
                 case "join": {
                     String userId = object.getString("userId");
-                    ChannelHolder.putUserKeyChannel(userId, context.channel().id().toString());
+                    String token = object.getString("token");
+                    if (StringUtils.isNotEmpty(token)
+                            && StringUtils.isNotEmpty(userId)
+                            && userId.length() > 16) {
+                        Claims claims = Jwts.parser()
+                                .setSigningKey(secret)
+                                .parseClaimsJws(token)
+                                .getBody();
+                        // 解析对应的权限以及用户信息
+                        String uuid = (String) claims.get("login_user_key");
+                        String userKey = "login_tokens:" + uuid;
+                        JSONObject userJson = redisCache.getCacheObject(userKey);
+                        if (userJson != null) {
+                            JSONObject sysUser = userJson.getJSONObject("user");
+                            if (sysUser != null) {
+                                String userName = userId.substring(0, userId.length() - 16);
+                                if (userName.equals(sysUser.getString("userName"))) {
+                                    ChannelHolder.putUserKeyChannel(userId, context.channel().id().toString());
+                                    Map<String, Object> msg = ImmutableMap.of(
+                                            "code", 200);
+                                    context.channel().writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(msg)));
+                                    return;
+                                }
+                            }
+                        }
+                    }
                     Map<String, Object> msg = ImmutableMap.of(
-                            "code", 200);
+                            "code", -100);
                     context.channel().writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(msg)));
                     break;
                 }

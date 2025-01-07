@@ -1,5 +1,6 @@
 package com.sven.rtcim.server;
 
+import com.sven.rtcim.redis.RedisCache;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -20,6 +21,12 @@ import java.util.concurrent.TimeUnit;
  * @since 2019/8/2 10:38 PM
  */
 public class NettyIMServerInitializer extends ChannelInitializer<SocketChannel> {
+
+    private RedisCache redisCache;
+
+    public NettyIMServerInitializer(RedisCache redisCache) {
+        this.redisCache = redisCache;
+    }
 
     @Override
     protected void initChannel(SocketChannel socketChannel) {
@@ -61,7 +68,7 @@ public class NettyIMServerInitializer extends ChannelInitializer<SocketChannel> 
 
         // 自定义的handler
 //        pipeline.addLast(new WebSocketHandler());
-        pipeline.addLast(new NettyChannelHandler());
+        pipeline.addLast(new NettyChannelHandler(redisCache));
 
         // ====================== 支持WebSocket协议   结束 ======================
 

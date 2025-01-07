@@ -1,5 +1,6 @@
 package com.sven.rtcim.server;
 
+import com.sven.rtcim.redis.RedisCache;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -9,6 +10,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -24,6 +26,9 @@ import java.net.InetSocketAddress;
 public class NettyIMServer {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(NettyIMServer.class);
+
+    @Autowired
+    private RedisCache redisCache;
 
     /**
      * 创建两个线程池 boss线程池中的线程是client，主要负责端口的监听；work线程池中的线程主要负责读写任务，即消息的收发；
@@ -54,7 +59,7 @@ public class NettyIMServer {
                 .childOption(ChannelOption.ALLOW_HALF_CLOSURE, false)
                 .localAddress(new InetSocketAddress(nettyPort))
                 //设置channel处理器
-                .childHandler(new NettyIMServerInitializer());
+                .childHandler(new NettyIMServerInitializer(redisCache));
 
         //异步启动服务器，future的结果就是服务器启动结果
         ChannelFuture future = bootstrap.bind().sync();
