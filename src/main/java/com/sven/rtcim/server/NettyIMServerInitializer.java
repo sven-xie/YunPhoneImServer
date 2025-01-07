@@ -11,6 +11,8 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 
+import java.util.concurrent.TimeUnit;
+
 
 /**
  * @author lanfangyi@haodf.com
@@ -34,16 +36,15 @@ public class NettyIMServerInitializer extends ChannelInitializer<SocketChannel> 
 
         // 对httpMessage进行聚合，聚合成FullHttpRequest或FullHttpResponse 至于聚合成哪个，由请求或者响应来决定
         // 几乎在netty中的编程，都会使用到此handler
-        pipeline.addLast(new HttpObjectAggregator(1024*64));
+        pipeline.addLast(new HttpObjectAggregator(1024 * 64));
         // ====================== 支持http协议   结束 ======================
-
 
 
         // ====================== 增加心跳支持 start  TODO  ======================
         //参考文章：http://www.52im.net/thread-2697-1-1.html
         // 针对客户端，如果在1分钟时没有向服务端发送读写心跳(ALL)，则主动断开
         // 如果是读空闲或者写空闲，不处理
-        pipeline.addLast(new IdleStateHandler(30, 0, 0));
+        pipeline.addLast(new IdleStateHandler(30, 0, 0, TimeUnit.SECONDS));
         // 自定义的空闲状态检测
         pipeline.addLast(new HeartBeatHandler());
         // ====================== 增加心跳支持 end    ======================

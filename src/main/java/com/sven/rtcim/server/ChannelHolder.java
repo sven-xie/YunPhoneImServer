@@ -3,7 +3,9 @@ package com.sven.rtcim.server;
 import io.netty.channel.Channel;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -45,7 +47,20 @@ public class ChannelHolder {
     }
 
     public static boolean removeChannelNoUserId(String channelId) {
+        if (StringUtils.isEmpty(channelId)) {
+            return false;
+        }
         channelIdMap.remove(channelId);
+        List<String> userKeyList = new ArrayList<>();
+        for (Map.Entry<String, String> entry : userChannelIdMap.entrySet()) {
+            if (channelId.equals(entry.getValue())) {
+                userKeyList.add(entry.getKey());
+            }
+        }
+        for (String useKey : userKeyList) {
+            userChannelIdMap.remove(useKey);
+            System.out.println("removeChannelNoUserId useKey=" + useKey);
+        }
         return true;
     }
 
