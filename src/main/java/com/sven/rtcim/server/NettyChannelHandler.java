@@ -2,7 +2,6 @@ package com.sven.rtcim.server;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.ImmutableMap;
-import com.sven.rtcim.redis.LoginUser;
 import com.sven.rtcim.redis.RedisCache;
 import com.sven.rtcim.utils.DateUtil;
 import io.jsonwebtoken.Claims;
@@ -11,7 +10,6 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.websocketx.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Map;
 

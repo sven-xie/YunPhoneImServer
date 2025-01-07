@@ -22,7 +22,7 @@ spring:
             max-wait: -1ms
 
 server:
-   port: 8080
+   port: 9898
 
 
 
