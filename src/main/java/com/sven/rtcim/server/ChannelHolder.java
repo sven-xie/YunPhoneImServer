@@ -1,6 +1,7 @@
 package com.sven.rtcim.server;
 
 import io.netty.channel.Channel;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +34,9 @@ public class ChannelHolder {
      */
     public static Channel getChannel(String userKey) {
         String channelId = userChannelIdMap.get(userKey);
+        if (StringUtils.isEmpty(channelId)) {
+            return null;
+        }
         return channelIdMap.get(channelId);
     }
 
