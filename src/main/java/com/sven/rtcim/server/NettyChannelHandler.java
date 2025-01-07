@@ -74,6 +74,9 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
             //返回应答消息
             //获取客户端向服务端发送的消息
             String content = ((TextWebSocketFrame) webSocketFrame).text();
+            if ("ping".equals(content)) {
+                return;
+            }
             log.info("服务端收到客户端的消息：" + content);
             JSONObject object = JSONObject.parseObject(content);
             String type = object.getString("type");
@@ -81,6 +84,9 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
                 case "join": {
                     String userId = object.getString("userId");
                     ChannelHolder.putUserKeyChannel(userId, context.channel().id().toString());
+                    Map<String, Object> msg = ImmutableMap.of(
+                            "code", 200);
+                    context.channel().writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(msg)));
                     break;
                 }
                 case "leave": {//离开房间
