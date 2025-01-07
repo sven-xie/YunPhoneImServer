@@ -3,15 +3,8 @@ package com.sven.rtcim.server;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.sven.rtcim.utils.DateUtil;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.websocketx.*;
-import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -24,16 +17,8 @@ import java.util.Map;
 @Slf4j
 public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
 
-    private WebSocketServerHandshaker webSocketServerHandshaker;
-    private static final String WEB_SOCKET_URL = "ws://127.0.0.1:8081/ws";
-
-    /**
-     * 客户端与服务端创建链接的时候调用
-     *
-     * @param context
-     */
     @Override
-    public void channelActive(ChannelHandlerContext context) {
+    public void handlerAdded(ChannelHandlerContext context) throws Exception {
         NettyConfig.group.add(context.channel());
         log.info("客户端建立连接，时间：{}", DateUtil.getNow());
         log.info("channelid:" + context.channel().id().asLongText());
@@ -41,29 +26,12 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
         ChannelHolder.putChannelNoUserId(context.channel().id().toString(), context.channel());
     }
 
-
-    /**
-     * 客户端与服务端断开连接的时候调用
-     *
-     * @param context
-     */
     @Override
-    public void channelInactive(ChannelHandlerContext context) {
+    public void handlerRemoved(ChannelHandlerContext context) throws Exception {
         NettyConfig.group.remove(context.channel());
         log.info("客户端与服务端连接断开，时间：{}", DateUtil.getNow());
         ChannelHolder.removeChannelNoUserId(context.channel().id().toString());
         log.info("清除channel信息成功");
-    }
-
-    /**
-     * 服务端接收客户端发送过来的数据结束之后调用
-     *
-     * @param context
-     */
-    @Override
-    public void channelReadComplete(ChannelHandlerContext context) {
-        log.info("服务器接读取完客户端的消息");
-        context.flush();
     }
 
     /**
@@ -83,11 +51,10 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
      * 服务端处理客户端websocke请求的核心方法
      *
      * @param channelHandlerContext
-     * @param o
      */
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, WebSocketFrame frame) {
-        log.info("服务端处理客户端websocke请求的核心方法");
+//        log.info("服务端处理客户端websocke请求的核心方法");
         //处理客户端向服务端发起的http握手请求
         try {
             handWebSocketFrame(channelHandlerContext, frame);
@@ -103,12 +70,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
      * @param webSocketFrame
      */
     private void handWebSocketFrame(ChannelHandlerContext context, WebSocketFrame webSocketFrame) {
-        if (webSocketFrame instanceof CloseWebSocketFrame) {
-            //判断是否是关闭websocket的指令
-            webSocketServerHandshaker.close(context.channel(), (CloseWebSocketFrame) webSocketFrame.retain());
-        } else if (webSocketFrame instanceof PingWebSocketFrame) {//判断是否是ping消息
-            context.channel().write(new PongWebSocketFrame(webSocketFrame.content().retain()));
-        } else if (webSocketFrame instanceof TextWebSocketFrame) {//判断是否是文本消息
+        if (webSocketFrame instanceof TextWebSocketFrame) {//判断是否是文本消息
             //返回应答消息
             //获取客户端向服务端发送的消息
             String content = ((TextWebSocketFrame) webSocketFrame).text();
@@ -153,26 +115,6 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
     }
 
 
-    /**
-     * 处理客户端向服务端发起http握手请求业务
-     *
-     * @param context
-     * @param fullHttpRequest
-     */
-    private void handHttpRequest(ChannelHandlerContext context, FullHttpRequest fullHttpRequest) {
-        if (!fullHttpRequest.decoderResult().isSuccess() || !("websocket".equals(fullHttpRequest.headers().get("Upgrade")))) {//判断是否http握手请求
-            sendHttpResponse(context, fullHttpRequest, new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST));
-            return;
-        }
-        WebSocketServerHandshakerFactory webSocketServerHandshakerFactory = new WebSocketServerHandshakerFactory(WEB_SOCKET_URL, "websocket", false);
-        webSocketServerHandshaker = webSocketServerHandshakerFactory.newHandshaker(fullHttpRequest);
-        if (webSocketServerHandshaker == null) {
-            WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(context.channel());
-        } else {
-            webSocketServerHandshaker.handshake(context.channel(), fullHttpRequest);
-        }
-    }
-
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
@@ -180,26 +122,6 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
             log.info("握手完成");
         } else {
             super.userEventTriggered(ctx, evt);
-        }
-    }
-
-    /**
-     * 服务端向客户端发送响应消息
-     *
-     * @param context
-     * @param fullHttpRequest
-     * @param defaultFullHttpResponse
-     */
-    private void sendHttpResponse(ChannelHandlerContext context, FullHttpRequest fullHttpRequest, DefaultFullHttpResponse defaultFullHttpResponse) {
-        if (defaultFullHttpResponse.status().code() != 200) {
-            ByteBuf buf = Unpooled.copiedBuffer(defaultFullHttpResponse.status().toString(), CharsetUtil.UTF_8);
-            defaultFullHttpResponse.content().writeBytes(buf);
-            buf.release();
-        }
-        //服务端向客户端发送数据
-        ChannelFuture future = context.channel().writeAndFlush(defaultFullHttpResponse);
-        if (defaultFullHttpResponse.status().code() != 200) {
-            future.addListener(ChannelFutureListener.CLOSE);
         }
     }
 
