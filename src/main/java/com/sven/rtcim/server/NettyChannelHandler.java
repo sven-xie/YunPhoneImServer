@@ -32,8 +32,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
     @Override
     public void handlerAdded(ChannelHandlerContext context) throws Exception {
         NettyConfig.group.add(context.channel());
-        log.info("客户端建立连接，时间：{}", DateUtil.getNow());
-        log.info("channelid:" + context.channel().id().asLongText());
+        log.info("连接成功；channelid:" + context.channel().id().asLongText());
         //将channel存入
         ChannelHolder.putChannelNoUserId(context.channel().id().toString(), context.channel());
     }
@@ -41,9 +40,8 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
     @Override
     public void handlerRemoved(ChannelHandlerContext context) throws Exception {
         NettyConfig.group.remove(context.channel());
-        log.info("客户端与服务端连接断开，时间：{}", DateUtil.getNow());
+        log.info("连接断开，时间：{}", DateUtil.getNow());
         ChannelHolder.removeChannelNoUserId(context.channel().id().toString());
-        log.info("清除channel信息成功");
     }
 
     /**
@@ -89,7 +87,10 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
             if ("ping".equals(content)) {
                 return;
             }
-            log.info("服务端收到客户端的消息：" + content);
+            if (!content.startsWith("keyCode") && !content.startsWith("touch")) {
+                // 触控的消息不打印日志
+                log.info("消息：" + content);
+            }
             JSONObject object = JSONObject.parseObject(content);
             String type = object.getString("type");
             switch (type) {
@@ -146,7 +147,8 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
                         // 发送失败；对方不在线
                         Channel channel = ChannelHolder.getChannel(userId);
                         Map<String, Object> msg = ImmutableMap.of(
-                                "code", -1);
+                                "code", -1,
+                                "text", text);
                         channel.writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(msg)));
                     }
                     break;
