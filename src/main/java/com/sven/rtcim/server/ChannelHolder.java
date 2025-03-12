@@ -27,6 +27,7 @@ public class ChannelHolder {
 
     public static void putUserKeyChannel(String userKey, String channelId) {
         userChannelIdMap.put(userKey, channelId);
+        System.out.println("IM online counts=" + userChannelIdMap.size());
     }
 
     /**
