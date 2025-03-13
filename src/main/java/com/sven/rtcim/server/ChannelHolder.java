@@ -28,6 +28,7 @@ public class ChannelHolder {
     public static void putUserKeyChannel(String userKey, String channelId) {
         userChannelIdMap.put(userKey, channelId);
         System.out.println("IM online counts=" + userChannelIdMap.size());
+
     }
 
     /**
@@ -65,7 +66,7 @@ public class ChannelHolder {
         return true;
     }
 
-    public static int getChannelMapSize() {
-        return channelIdMap.size();
+    public static int getImTotalCount() {
+        return userChannelIdMap.size();
     }
 }

@@ -119,6 +119,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
                                     Map<String, Object> msg = ImmutableMap.of(
                                             "code", 200);
                                     context.channel().writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(msg)));
+                                    redisCache.setCacheObject("MyImOnlineTotalCount",ChannelHolder.getImTotalCount());
                                     return;
                                 }
                             }
