@@ -87,12 +87,14 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
             if ("ping".equals(content)) {
                 return;
             }
-            if (!content.startsWith("keyCode") && !content.startsWith("touch")) {
+
+            JSONObject object = JSONObject.parseObject(content);
+            String type = object.getString("type");
+            String text = object.getString("text");
+            if (!text.startsWith("keyCode") && !text.startsWith("touch")) {
                 // 触控的消息不打印日志
                 log.info("消息：" + content);
             }
-            JSONObject object = JSONObject.parseObject(content);
-            String type = object.getString("type");
             switch (type) {
                 case "join": {
                     String userId = object.getString("userId");
@@ -134,7 +136,6 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
                 case "offer": {//转发offer
                     String userId = object.getString("userId");
                     String peerId = object.getString("peerId");
-                    String text = object.getString("text");
                     Channel peerChannel = ChannelHolder.getChannel(peerId);
 
                     if (peerChannel != null) {
