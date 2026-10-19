@@ -7,7 +7,8 @@ spring:
       # 端口，默认为6379
       port: 6379
       # 密码
-      password: xie1203
+#      password: xie1203
+      password: bJucnowKkFe7q3MMrXgu1_I4ojk0msYgVpE4kuDMaVaHkXydTqT2CgnM_txb5NVL
       # 连接超时时间
       timeout: 10s
       lettuce:
