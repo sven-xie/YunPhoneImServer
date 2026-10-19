@@ -21,7 +21,7 @@ import java.util.Map;
 @Slf4j
 public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
 
-    private final static String secret = "xie1203";
+    private final static String secret = "bJucnowKkFe7q3MMrXgu1_I4ojk0msYgVpE4kuDMaVaHkXydTqT2CgnM_txb5NVL";
 
     private RedisCache redisCache;
 
@@ -119,7 +119,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
                                     Map<String, Object> msg = ImmutableMap.of(
                                             "code", 200);
                                     context.channel().writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(msg)));
-                                    redisCache.setCacheObject("MyImOnlineTotalCount",ChannelHolder.getImTotalCount());
+                                    redisCache.setCacheObject("MyImOnlineTotalCount", ChannelHolder.getImTotalCount());
                                     return;
                                 }
                             }
