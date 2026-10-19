@@ -91,7 +91,7 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
             JSONObject object = JSONObject.parseObject(content);
             String type = object.getString("type");
             String text = object.getString("text");
-            if (!text.startsWith("keyCode") && !text.startsWith("touch")) {
+            if (text != null && !text.startsWith("keyCode") && !text.startsWith("touch")) {
                 // 触控的消息不打印日志
                 log.info("消息：" + content);
             }
@@ -99,9 +99,12 @@ public class NettyChannelHandler extends SimpleChannelInboundHandler<WebSocketFr
                 case "join": {
                     String userId = object.getString("userId");
                     String token = object.getString("token");
+                    log.info("消息：userId" + userId);
+                    log.info("消息：token" + token);
                     if (StringUtils.isNotEmpty(token)
                             && StringUtils.isNotEmpty(userId)
                             && userId.length() > 16) {
+                        log.info("消息1：userId" + userId);
                         Claims claims = Jwts.parser()
                                 .setSigningKey(secret)
                                 .parseClaimsJws(token)
